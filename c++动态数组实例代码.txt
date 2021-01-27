@@ -1,0 +1,203 @@
+#include<iostream>
+#include<string>
+using namespace std;
+struct Student {
+	string name;
+	int age = 0;
+	Student() {}
+	Student(string name, int age) {
+		this->name = name;
+		this->age = age;
+	}
+};
+class StudentArray {
+	Student* list = NULL;
+	int size = 0;
+	int capacity = 0;
+public:
+	StudentArray(int InitCapacity);//构造函数 
+	StudentArray(const StudentArray& a);//拷贝构造函数
+	void PushStudent(const Student& s);//插入元素 
+	int LocateStudent(const Student& s);//查找元素并获取到他的位置 
+	void DeleteStudent(const Student& s);//删除元素 
+	~StudentArray();//析构函数
+	StudentArray& operator=(const StudentArray& rhs);//重载=使数组可以整体性赋值
+	Student& operator[](int i);//[]运算符的普通重载 
+	const Student& operator[](int i)const; //[]运算符的const重载
+	operator Student* ();//重载到Student类型的转换，使得StudentArray可以起到普通数组的作用
+	operator const Student* ();//到Student*类型的const转换 
+	int GetSize();//获取当前数组的目前长度
+	int GetCapacity();//获取数组的容量
+	void ReCapacity(int PushCapacity);//扩充数组的长度 
+};
+//构造函数，动态内存分配
+StudentArray::StudentArray(int InitCapacity) {
+	capacity = InitCapacity;
+	if (InitCapacity == 0) {
+		cout << "输入有误，请重新输入" << endl;
+		exit(-1);
+	}
+	else {
+		list = new Student[InitCapacity];
+		if (list != NULL)
+			cout << "动态数组构建成功" << endl;
+		else
+			cout << "动态数组创建失败" << endl;
+	}
+}
+//拷贝构造函数
+StudentArray::StudentArray(const StudentArray& a) {
+	capacity = a.capacity;  //数组容量复制
+	size = a.size;//数组当前元素个数复制
+	//下面是深复制
+	list = new Student[capacity];
+	for (int i = 0; i < size; i++) {
+		list[i] = a.list[i];//元素逐个复制 
+	}
+	if (list != NULL)
+		cout << "动态数组复制成功" << endl;
+	else {
+		cout << "动态数组复制失败" << endl;
+		exit(-1);
+	}
+}
+//插入操作
+void StudentArray::PushStudent(const Student& s) {
+	cout << "数组容量为:" << this->capacity << endl;
+	if (this->list != NULL) {
+		cout << "第" << size << "次插入" << endl;
+		list[size].age = s.age;
+		list[size].name = s.name;
+		size++;
+	}
+	else {
+		cout << "无法插入元素" << endl;
+		exit(-1);
+	}
+}
+//查找元素并获取到他的位置 
+int StudentArray::LocateStudent(const Student& s) {
+	int i;
+	for (i = 0; i < size; i++)
+		if (list[i].age == s.age && list[i].name == s.name)
+			return i;
+		else
+			return -1;
+
+}
+//删除元素 
+void StudentArray::DeleteStudent(const Student& s) {
+	bool flag = 0;
+	if (size <= 0)
+		cout << "数组为空，无法删除" << endl;
+	else
+		for (int i = 0; i < size; i++)
+			if (list[i].age == s.age || list[i].name == s.name)
+			{
+				for (int j = i + 1; j < size; j++)
+					list[j - 1] = list[j];
+				size--;
+				flag = 1;
+			}
+	if (flag == 1) cout << "删除成功" << endl;
+	else
+		cout << "无此元素，删除失败" << endl;
+}
+//析构函数
+StudentArray::~StudentArray() {
+	if (list != NULL)
+		delete[]list;
+}
+//重载=运算符，将对象rhs赋值给调用此函数的对象，实现对象之间的直接整体赋值
+StudentArray& StudentArray::operator=(const StudentArray& rhs) {
+	if (&rhs != this) {
+		if (capacity != rhs.capacity) {
+			delete[]list;
+			capacity = rhs.capacity; //重新设置动态数组的容量
+			size = 0;
+			list = new Student[capacity];//重新动态内存分配数组
+			size = rhs.size;
+		}
+		for (int i = 0; i < size; i++) {
+			list[i] = rhs.list[i];
+		}
+	}
+	return *this;
+}
+//[]运算符的普通重载
+Student& StudentArray::operator[](int i) {
+	if (i >= 0 && i < capacity)
+		return list[i];
+	else {
+		cout << "[]运算符的普通重载错误，无法完成任务" << endl;
+		exit(-1);
+	}
+}
+//[]运算符的const重载
+const Student& StudentArray::operator[](int i)const {
+	if (i >= 0 && i < capacity)
+		return list[i];
+	else {
+		cout << "[]运算符的const重载错误，无法完成任务" << endl;
+		exit(-1);
+	}
+}
+
+//重载指针运算符，使得StudentArray类型的对象名转换为Student类型的指针
+//指向当前对象的私有数组，因而可以像使用普通数组来作为首地址一样使用StudentArray对象名来作为首地址 
+StudentArray::operator Student* () {
+	return list;
+}
+StudentArray::operator const Student* () {
+	return list;
+}
+
+int StudentArray::GetSize() {
+	return size;
+}
+
+int StudentArray::GetCapacity() {
+	return capacity;
+}
+void StudentArray::ReCapacity(int PushCapacity) {
+	if (PushCapacity < 0)
+	{
+		cout << "输出有误" << endl;
+		exit(-1);
+	}
+	else {
+		if (PushCapacity == this->capacity)
+			return;  //如果指定的扩充的数组大小和原数组大小一样，则什么也不做
+		else
+		{
+			Student* Templist = new Student[PushCapacity];
+			this->size = 0;
+			int n = (PushCapacity < capacity) ? PushCapacity : capacity;
+			for (int i = 0; i < n; i++) {
+				Templist[i] = list[i];
+				this->size++;
+			}
+			this->capacity = PushCapacity;
+			delete[]list;
+			this->list = Templist;
+			if (list != NULL)
+				cout << "扩容成功" << endl;
+		}
+	}
+}
+
+//测试删除模块
+void test05() {
+	StudentArray s1(2);
+	Student aa("张强", 20);
+	Student bb("张琪", 84);
+	s1.PushStudent(aa);
+	s1.PushStudent(bb);
+	cout << "姓名: " << s1[0].name << " 年龄：" << s1[0].age << endl;
+	cout << "姓名: " << s1[1].name << " 年龄：" << s1[1].age << endl;
+	s1.DeleteStudent(aa);
+	cout << "姓名: " << s1[0].name << " 年龄：" << s1[0].age << endl;
+}
+int main() {
+	test05();
+}

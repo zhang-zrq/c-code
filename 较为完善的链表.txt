@@ -1,0 +1,266 @@
+//Node.h的源文件
+#ifndef _NODE_H
+#define _NODE_H
+template<class T>
+class Node {
+	Node<T>* next; //指向后继节点的指针
+public:
+	T data;  //存放数据的数据域
+	Node(const T& data, Node<T>* next = NULL);  //构造函数，创建一个的节点以保存数据data
+	void insertAfter(Node<T>* p);   //在本结点之后插入一个新的同类节点
+	Node<T>* deleteAfter();  //删除本结点之后的后继结点，并返回其地址。
+	Node<T>* nextNode();  //获取后继节点的地址
+	const Node<T>* nextNode()const; //获取后继节点的地址
+};
+//具体实现过程
+template<class T>
+Node<T>::Node(const T& data, Node<T>* next) :data(data), next(next) {}
+template<class T>
+Node<T>* Node<T>::nextNode() {
+	return next;
+}
+template<class T>
+const Node<T>* Node<T>::nextNode() const {
+	return next;
+}
+template<class T>
+void Node<T>::insertAfter(Node<T>* p) {
+	p->next = next;
+	next = p;
+}
+template<class T>
+Node<T>* Node<T>::deleteAfter() {
+	Node<T>* temptr = next;
+	if (next == 0) return 0;
+	next = temptr->next;
+	return temptr;
+}
+
+#endif 
+
+
+//LinkedList.h
+#ifndef LINKEDLIST_H
+#define LINKEDLIST_H
+//#include <cstdio>
+#include <cassert>
+#include "Node.h"
+template<class T>
+class LinkedList {
+private:
+    Node<T>* front, * rear;  //表头指针和表位指针，表的首尾指针，而不是结点的首位指针
+    Node<T>* prevPtr, * currPtr;  //记录表当前遍历位置的指针，由插入和删除操作更新。
+    int size;//链表中的结点个数
+    int position;//当前元素在表中的位置序号，由函数reset管理
+    //生成新结点，并且用来存储数据item，指针域为ptrNext
+    Node<T>* newNode(const T& item, Node<T>* ptrNext = NULL);
+    //释放结点
+    void freeNode(Node<T>* p);
+    //将链表L复制到当前表 ，不是复制构造函数，等会将要被复制构造函数和operator=的重载函数调用。
+    void copy(const LinkedList<T>& L);
+
+public:
+    LinkedList(); //链表的构造函数
+    LinkedList(const LinkedList<T>& L); //链表的复制构造函数
+    ~LinkedList();//链表的析构函数
+    LinkedList<T>& operator=(const LinkedList<T>& L); //operator=的重载函数
+    int getSize()const; //返回链表当前元素个数
+    bool isEmpty() const; //判断链表是否为空
+    void reset(int pos = 0); //初始化游标位置，
+    void next();//游标移动到下一个结点
+    bool endOfList() const;//判断是否到文件尾
+    int currentPosition(void) const;//返回游标当前位置
+
+    void insertFront(const T& item);//在表头插入结点
+    void insertRear(const T& item); //在表尾插入结点
+    void insertAt(const T& item); //在当前结点之前插入结点
+    void insertAfter(const T& item); //在当前结点之后插入结点
+    T deleteFront(); //删除头结点
+    void deleteCurrent(); //删除当前结点
+    T& data();  //返回当前结点的数据内容的引用
+    const T& data() const; //返回当前结点的数据内容的常引用
+    void clear(); //清空链表，释放所有的结点占用的内存空间，被析构函数和operator=调用
+};
+
+template<class T>
+void LinkedList<T>::freeNode(Node<T>* p) {
+    delete p;
+}
+
+template<class T>
+void LinkedList<T>::copy(const LinkedList<T>& L) {
+    front = L.front;
+    rear = L.front;
+    currPtr = L.currPtr;
+    prevPtr = L.prevPtr;
+    size = L.size;
+    position = L.position;
+}
+
+template<class T>
+LinkedList<T>::LinkedList() :front(NULL), rear(NULL), prevPtr(NULL), currPtr(NULL), size(0), position(0) {}
+
+template<class T>
+LinkedList<T>::LinkedList(const LinkedList<T>& L) {
+    copy(L);
+}
+
+template<class T>
+LinkedList<T>::~LinkedList() {
+    clear();
+    delete prevPtr;
+    delete currPtr;
+}
+
+template<class T>
+LinkedList<T>& LinkedList<T>::operator=(const LinkedList<T>& L) {
+    copy(L);
+}
+
+template<class T>
+int LinkedList<T>::getSize() const {
+    return size;
+}
+
+template<class T>
+bool LinkedList<T>::isEmpty() const {
+    return size == 0;
+}
+
+template<class T>
+void LinkedList<T>::reset(int pos) {
+    if (pos >= 0 && pos <= size) {
+        position = 0;
+        currPtr = front;
+        prevPtr = NULL;
+        while (pos--)	next();
+    }
+    else {
+        position = pos;
+        currPtr = prevPtr = NULL;
+    }
+}
+
+template<class T>
+void LinkedList<T>::next() {
+    ++position;
+    prevPtr = currPtr;
+    if (currPtr != NULL)	currPtr = currPtr->nextNode();
+}
+
+template<class T>
+bool LinkedList<T>::endOfList() const {
+    return position == size;
+    /*错误的如下
+    return position == size - 1;
+    */
+}
+
+template<class T>
+int LinkedList<T>::currentPosition() const {
+    return position;
+}
+//创建一个新的节点以保存数据item，并返回地址
+template<class T>
+Node<T>* LinkedList<T>::newNode(const T& item, Node<T>* ptrNext) {
+    Node<T>* p = new Node<T>(item, ptrNext); //注意分开的new Node，函数名是合起来的newNode，两个含义不同
+    assert(p != NULL);
+    return p;
+}
+
+template<class T>
+void LinkedList<T>::insertFront(const T& item) {
+    front = newNode(item, front);
+    if (isEmpty())
+        rear = front;
+    ++size;
+    reset(++position);
+}
+
+template<class T>
+void LinkedList<T>::insertRear(const T& item) {
+    Node<T>* p = newNode(item);
+    if (isEmpty()) {
+        front = rear = p;
+    }
+    else {
+        rear->insertAfter(p);
+        rear = p;
+    }
+    ++size;
+    reset(position);
+}
+
+template<class T>
+void LinkedList<T>::insertAt(const T& item) {
+    if (currPtr != NULL) {
+        Node<T>* p = newNode(item, currPtr);
+        if (prevPtr != NULL)	prevPtr->insertAfter(p);
+        else front = rear = p;
+        ++size;
+        reset(++position);
+    }
+}
+
+template<class T>
+void LinkedList<T>::insertAfter(const T& item) {
+    if (currPtr != NULL) {
+        Node<T>* p = newNode(item, currPtr->next);
+        currPtr->insertAfter(p);
+        ++size;
+        reset(position);
+    }
+}
+
+template<class T>
+T LinkedList<T>::deleteFront() {
+    assert(!isEmpty());
+    Node<T>* p = front;
+    front = front->nextNode();
+    if (--size == 0)	front = rear = NULL;
+    reset(--position);
+    T item = p->data;
+    freeNode(p);
+    return item;
+}
+
+template<class T>
+void LinkedList<T>::deleteCurrent() {
+    assert(!isEmpty());
+    Node<T>* p = currPtr;
+    if (currPtr) {
+        if (currPtr == front)	front = front->nextNode();
+        else if (currPtr == rear)	rear = prevPtr;
+        else if (prevPtr != NULL)	prevPtr->deleteAfter();
+        freeNode(currPtr);
+        --size;
+        reset(position);
+    }
+}
+
+template<class T>
+T& LinkedList<T>::data() {
+    return currPtr->data;
+}
+
+template<class T>
+const T& LinkedList<T>::data() const {
+    return currPtr->data;
+}
+
+template<class T>
+void LinkedList<T>::clear() {
+    while (!isEmpty())   //解决了浅复制的重复析构问题。
+        deleteFront();
+}
+#endif //LINKEDLIST_H
+
+
+
+
+
+
+
+
+
+
